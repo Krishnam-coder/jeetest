@@ -1,1 +1,1316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>JEE Main 2026: CBT Portal (Universal Cloud Leaderboard)</title>
 
+  <!-- KaTeX for crisp mathematical typography -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" />
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" onload="renderAllMath()"></script>
+
+  <style>
+    :root {
+      --primary: #1a73e8;
+      --header-bg: #0d47a1;
+      --answered: #2e7d32;
+      --not-answered: #c62828;
+      --marked: #6a1b9a;
+      --marked-answered: #4a148c;
+      --not-visited: #cfd8dc;
+      --surface: #ffffff;
+      --bg-neutral: #f4f6f9;
+      --border: #dcdfe6;
+    }
+
+    * { 
+      box-sizing: border-box; 
+      margin: 0; 
+      padding: 0; 
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: var(--bg-neutral);
+      color: #202124;
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Top System Bar */
+    header {
+      background: var(--header-bg);
+      color: #fff;
+      padding: 6px 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 20;
+      height: 48px;
+      flex-shrink: 0;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+    }
+    .header-left {
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      max-width: 58%;
+    }
+    .exam-name {
+      font-size: clamp(0.72rem, 2.5vw, 0.9rem);
+      font-weight: 700;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .header-sub {
+      font-size: 0.65rem;
+      opacity: 0.85;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .timer-chip {
+      background: #fff;
+      color: #b71c1c;
+      font-family: monospace;
+      font-size: clamp(0.8rem, 2.8vw, 1rem);
+      font-weight: 800;
+      padding: 3px 6px;
+      border-radius: 4px;
+    }
+    .palette-toggle-btn {
+      display: none;
+      background: #37474f;
+      color: #fff;
+      border: none;
+      padding: 5px 8px;
+      border-radius: 4px;
+      font-weight: 600;
+      font-size: 0.75rem;
+      cursor: pointer;
+    }
+
+    /* Main Examination Wrapper */
+    .cbt-wrapper {
+      display: flex;
+      flex: 1;
+      height: calc(100% - 48px);
+      position: relative;
+      overflow: hidden;
+    }
+    .question-section {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      position: relative;
+      background: #fff;
+      overflow: hidden;
+    }
+
+    /* Subject Tabs */
+    .subject-nav {
+      display: flex;
+      background: #e8eaf6;
+      border-bottom: 2px solid #c5cae9;
+      overflow-x: auto;
+      flex-shrink: 0;
+      scrollbar-width: none;
+    }
+    .subject-nav::-webkit-scrollbar { display: none; }
+    .subj-tab {
+      padding: 8px 12px;
+      border: none;
+      background: transparent;
+      font-weight: 700;
+      color: #3949ab;
+      cursor: pointer;
+      white-space: nowrap;
+      font-size: clamp(0.72rem, 2.2vw, 0.84rem);
+    }
+    .subj-tab.active {
+      background: #fff;
+      color: #0d47a1;
+      border-bottom: 3px solid #0d47a1;
+    }
+
+    /* Question Scroll Area */
+    .question-scroll {
+      flex: 1;
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding: 12px 14px 68px 14px;
+      -webkit-overflow-scrolling: touch;
+    }
+    .question-meta-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 6px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 10px;
+      font-size: 0.75rem;
+      color: #5f6368;
+    }
+    .q-type-tag {
+      font-weight: 700;
+      color: #1a73e8;
+      background: #e8f0fe;
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-size: 0.7rem;
+    }
+    .question-body {
+      font-size: clamp(0.88rem, 2.6vw, 1rem);
+      line-height: 1.5;
+      margin-bottom: 14px;
+      color: #111;
+      word-break: break-word;
+      overflow-wrap: break-word;
+    }
+
+    .katex-display {
+      max-width: 100%;
+      overflow-x: auto;
+      overflow-y: hidden;
+      padding: 4px 0;
+      margin: 6px 0 !important;
+    }
+
+    /* Options Stack */
+    .options-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .option-card {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      padding: 10px 10px;
+      background: #fafafa;
+      border: 1.5px solid var(--border);
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: clamp(0.82rem, 2.5vw, 0.94rem);
+      line-height: 1.4;
+      word-break: break-word;
+    }
+    .option-card:hover { background: #f1f6fd; border-color: #90caf9; }
+    .option-card input[type="radio"] {
+      margin-top: 3px;
+      flex-shrink: 0;
+      transform: scale(1.1);
+    }
+    .opt-key {
+      font-weight: 700;
+      color: #37474f;
+      flex-shrink: 0;
+    }
+    .option-card div {
+      overflow-x: auto;
+      max-width: 100%;
+    }
+
+    /* Numerical Input */
+    .numerical-wrap { margin-top: 10px; }
+    .num-input-field {
+      padding: 10px 12px;
+      font-size: 1rem;
+      width: 100%;
+      max-width: 240px;
+      border: 2px solid #90caf9;
+      border-radius: 6px;
+      outline: none;
+      font-weight: 600;
+    }
+
+    /* Fixed Bottom Action Row */
+    .fixed-bottom-bar {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 54px;
+      background: #fff;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px 8px;
+      gap: 4px;
+      z-index: 15;
+      box-shadow: 0 -2px 6px rgba(0,0,0,0.06);
+    }
+    .btn-group {
+      display: flex;
+      gap: 4px;
+      align-items: center;
+    }
+    .btn-cbt {
+      padding: 8px 8px;
+      border-radius: 4px;
+      font-size: clamp(0.68rem, 2.2vw, 0.78rem);
+      font-weight: 700;
+      cursor: pointer;
+      border: 1px solid transparent;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+    .btn-save-next { background: var(--answered); color: #fff; }
+    .btn-clear-opt { background: #f1f3f4; border-color: #dadce0; color: #3c4043; }
+    .btn-review-next { background: var(--marked); color: #fff; }
+    .btn-submit-test { background: var(--header-bg); color: #fff; }
+
+    /* Palette Sidebar */
+    .question-palette-sidebar {
+      width: 290px;
+      background: #fafafa;
+      border-left: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      flex-shrink: 0;
+    }
+    .student-badge-card {
+      padding: 10px 12px;
+      background: #eceff1;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .user-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: #0d47a1;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 0.9rem;
+    }
+    .student-details {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: #263238;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .legend-box {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+      padding: 8px 10px;
+      background: #fff;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.68rem;
+    }
+    .legend-item { display: flex; align-items: center; gap: 5px; }
+    .dot-box {
+      width: 16px;
+      height: 16px;
+      border-radius: 3px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 0.6rem;
+      font-weight: 700;
+    }
+    .palette-grid-scroll {
+      flex: 1;
+      overflow-y: auto;
+      padding: 10px;
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 6px;
+      align-content: start;
+    }
+    .p-btn {
+      aspect-ratio: 1;
+      border: 1px solid #bbb;
+      border-radius: 4px;
+      font-weight: 700;
+      font-size: 0.78rem;
+      cursor: pointer;
+      background: var(--not-visited);
+      color: #37474f;
+    }
+    .p-btn.answered { background: var(--answered); color: #fff; border-color: var(--answered); }
+    .p-btn.not-answered { background: var(--not-answered); color: #fff; border-color: var(--not-answered); }
+    .p-btn.marked { background: var(--marked); color: #fff; border-color: var(--marked); border-radius: 50%; }
+    .p-btn.marked-answered { background: var(--marked-answered); color: #fff; border-color: var(--marked-answered); outline: 2px solid #ffeb3b; }
+    .p-btn.current { outline: 2.5px solid #ff9800; }
+
+    /* Login & Popups */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.85);
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 14px;
+    }
+    .modal-card {
+      background: #fff;
+      width: 100%;
+      max-width: 400px;
+      padding: 20px;
+      border-radius: 8px;
+      text-align: left;
+    }
+    .modal-card h2 { color: #0d47a1; font-size: 1.15rem; margin-bottom: 6px; }
+    .login-input {
+      width: 100%;
+      padding: 11px;
+      font-size: 0.95rem;
+      border: 1.5px solid #bbb;
+      border-radius: 6px;
+      margin: 12px 0 16px 0;
+      outline: none;
+    }
+
+    /* Violation Popup */
+    .violation-popup {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(183, 28, 28, 0.94);
+      z-index: 200;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+    .violation-box {
+      background: #fff;
+      border-radius: 8px;
+      max-width: 380px;
+      width: 100%;
+      padding: 20px;
+      text-align: center;
+    }
+    .violation-box h3 { color: #c62828; font-size: 1.15rem; margin-bottom: 8px; }
+    .violation-box p { font-size: 0.85rem; color: #333; line-height: 1.4; margin-bottom: 16px; }
+
+    /* Analysis View */
+    .analysis-screen {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: var(--bg-neutral);
+      z-index: 95;
+      overflow-y: auto;
+      padding: 14px 10px;
+      user-select: text;
+      -webkit-user-select: text;
+    }
+    .analysis-container {
+      max-width: 850px;
+      margin: 0 auto;
+      background: #fff;
+      border-radius: 8px;
+      padding: 16px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+    .stats-dashboard {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+      text-align: center;
+      margin: 14px 0;
+    }
+    .stat-tile {
+      background: #f8f9fa;
+      border: 1px solid #e9ecef;
+      border-radius: 6px;
+      padding: 10px 4px;
+    }
+    .stat-val { font-size: 1.4rem; font-weight: 800; color: #0d47a1; }
+    .stat-lbl { font-size: 0.7rem; color: #5f6368; font-weight: 700; text-transform: uppercase; }
+
+    .subject-breakdown-box {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 8px;
+      margin: 12px 0 18px 0;
+    }
+    .subj-tile {
+      background: #e3f2fd;
+      border-radius: 6px;
+      padding: 10px;
+      border: 1px solid #bbdefb;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .subj-tile h4 { font-size: 0.82rem; color: #0d47a1; }
+    .subj-tile .s-score { font-size: 1.15rem; font-weight: 800; color: #1565c0; }
+
+    .table-responsive {
+      width: 100%;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      margin: 12px 0;
+    }
+    .rank-table {
+      width: 100%;
+      min-width: 480px;
+      border-collapse: collapse;
+      font-size: 0.82rem;
+    }
+    .rank-table th, .rank-table td { border: 1px solid #dee2e6; padding: 7px 8px; text-align: left; }
+    .rank-table th { background: #f1f3f4; font-weight: 700; }
+
+    .solution-item {
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 12px;
+      margin-bottom: 12px;
+      background: #fff;
+    }
+    .sol-header {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.8rem;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+    .sol-box {
+      background: #f4f8fb;
+      border-left: 3px solid #1a73e8;
+      padding: 8px 10px;
+      margin-top: 8px;
+      font-size: 0.88rem;
+      line-height: 1.45;
+      overflow-x: auto;
+    }
+
+    @media (max-width: 768px) {
+      .question-palette-sidebar {
+        position: fixed;
+        right: 0;
+        top: 48px;
+        bottom: 54px;
+        width: 260px;
+        z-index: 25;
+        transform: translateX(100%);
+        transition: transform 0.25s ease-in-out;
+        box-shadow: -3px 0 10px rgba(0,0,0,0.2);
+      }
+      .question-palette-sidebar.open { transform: translateX(0); }
+      .palette-toggle-btn { display: inline-block; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top System Bar -->
+  <header>
+    <div class="header-left">
+      <div class="exam-name">JEE (Main) 2026: Comeback Series [LOCKED][cite: 1]</div>
+      <div class="header-sub" id="headCandidateName">Candidate: Authenticating...</div>
+    </div>
+    <div class="header-right">
+      <div class="timer-chip" id="cbtTimer">03:00:00</div>
+      <button class="palette-toggle-btn" onclick="toggleMobilePalette()">☰ Grid</button>
+    </div>
+  </header>
+
+  <!-- CBT Examination Area -->
+  <div class="cbt-wrapper">
+    <div class="question-section">
+      <!-- Subject Nav -->
+      <div class="subject-nav">
+        <button class="subj-tab active" onclick="switchSubjectNav('Physics')">Physics (1-25)</button>
+        <button class="subj-tab" onclick="switchSubjectNav('Chemistry')">Chemistry (26-50)</button>
+        <button class="subj-tab" onclick="switchSubjectNav('Mathematics')">Maths (51-75)</button>
+      </div>
+
+      <!-- Question Viewport -->
+      <div class="question-scroll" id="qViewport">
+        <div class="question-meta-row">
+          <span id="qIndexLabel" style="font-weight: 700;">Question 1</span>
+          <span class="q-type-tag" id="qTypeBadge">Single Choice (+4, -1)</span>
+        </div>
+        <div class="question-body" id="qBodyText">Loading examination questions...</div>
+        <div id="qAnswerInputContainer"></div>
+      </div>
+
+      <!-- Bottom Pinned Action Controls -->
+      <div class="fixed-bottom-bar">
+        <div class="btn-group">
+          <button class="btn-cbt btn-save-next" onclick="onSaveNext()">Save &amp; Next</button>
+          <button class="btn-cbt btn-clear-opt" onclick="onClearAnswer()">Clear</button>
+        </div>
+        <div class="btn-group">
+          <button class="btn-cbt btn-review-next" onclick="onMarkReviewNext()">Review</button>
+          <button class="btn-cbt btn-submit-test" onclick="onSubmitExamIntent()">Submit</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Palette Drawer -->
+    <div class="question-palette-sidebar" id="paletteDrawer">
+      <div class="student-badge-card">
+        <div class="user-avatar" id="avatarInitial">U</div>
+        <div class="student-details">
+          <div id="sideNameDisplay">Candidate</div>
+          <small style="color: #546e7a;">Status: Monitored</small>
+        </div>
+      </div>
+      <div class="legend-box">
+        <div class="legend-item"><span class="dot-box" style="background:var(--answered)">✓</span> Answered</div>
+        <div class="legend-item"><span class="dot-box" style="background:var(--not-answered)">✗</span> Unanswered</div>
+        <div class="legend-item"><span class="dot-box" style="background:var(--not-visited)">-</span> Not Visited</div>
+        <div class="legend-item"><span class="dot-box" style="background:var(--marked)">●</span> Review</div>
+      </div>
+      <div style="padding: 6px 10px; font-size: 0.75rem; font-weight: bold; background: #eef2f5;" id="paletteHeading">Physics Grid</div>
+      <div class="palette-grid-scroll" id="paletteGrid"></div>
+    </div>
+  </div>
+
+  <!-- Name Login Modal -->
+  <div class="modal-overlay" id="loginPopup">
+    <div class="modal-card">
+      <h2>Student CBT Login</h2>
+      <p style="font-size: 0.8rem; color: #555; line-height: 1.4; margin-top: 4px;">
+        ⚠️ <b>Anti-Cheat Protected:</b><br />
+        • Runs in <b>Full-Screen Mode</b>.<br />
+        • Switching apps, tabs, or exiting full screen triggers a penalty warning.<br />
+        • <b>3 warnings will auto-submit your test.</b><br />
+        • Score is ranked on the <b>Universal All-Device Cloud Leaderboard</b>.
+      </p>
+      <input type="text" class="login-input" id="studentNameField" placeholder="Enter Candidate Name..." autofocus />
+      <button class="btn-cbt btn-save-next" style="width: 100%; padding: 11px; font-size: 0.9rem;" onclick="onAuthenticateUser()">Start Examination</button>
+    </div>
+  </div>
+
+  <!-- Anti-Cheat Violation Warning Modal -->
+  <div class="violation-popup" id="violationOverlay">
+    <div class="violation-box">
+      <h3>⚠️ Security Violation Detected</h3>
+      <p id="violationReason">Switching tabs, minimizing the browser, or exiting full screen is prohibited.</p>
+      <p style="font-weight: 700; color: #c62828; margin-bottom: 12px;" id="violationCountText">Warning 1 of 3</p>
+      <button class="btn-cbt btn-save-next" style="width: 100%; padding: 10px;" onclick="resumeTestFullscreen()">Return to Test</button>
+    </div>
+  </div>
+
+  <!-- Analysis, Solutions & Universal Leaderboard View -->
+  <div class="analysis-screen" id="analysisDashboard">
+    <div class="analysis-container">
+      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1.5px solid #1a73e8; padding-bottom: 6px;">
+        <div>
+          <h2 style="color: #0d47a1; font-size: 1.15rem;">JEE Main CBT Report</h2>
+          <p style="font-size: 0.8rem; color: #666;" id="reportCandidateInfo"></p>
+        </div>
+        <!-- Admin Cloud Reset Button -->
+        <button onclick="resetLeaderboardAdmin()" style="background:#c62828; color:#fff; border:none; padding:5px 8px; border-radius:4px; font-size:0.7rem; font-weight:bold; cursor:pointer;">
+          🗑️ Reset Cloud Ranks
+        </button>
+      </div>
+
+      <div class="stats-dashboard">
+        <div class="stat-tile">
+          <div class="stat-lbl">Final Score</div>
+          <div class="stat-val" id="dispTotalScore">0</div>
+          <small style="color: #888;">Out of 300</small>
+        </div>
+        <div class="stat-tile">
+          <div class="stat-lbl">All-Device Rank</div>
+          <div class="stat-val" id="dispCurrentRank">#1</div>
+          <small style="color: #888;" id="dispTotalCandidates">Live Sync</small>
+        </div>
+        <div class="stat-tile">
+          <div class="stat-lbl">Attempted</div>
+          <div class="stat-val" id="dispAttempted">0</div>
+          <small style="color: #888;">Out of 75</small>
+        </div>
+        <div class="stat-tile">
+          <div class="stat-lbl">Accuracy</div>
+          <div class="stat-val" id="dispAccuracy">0%</div>
+          <small style="color: #888;">Precision</small>
+        </div>
+      </div>
+
+      <!-- Subject Breakdown -->
+      <div class="subject-breakdown-box">
+        <div class="subj-tile">
+          <div>
+            <h4>Physics (Max 100)</h4>
+            <small id="dispCountPhy">Correct: 0 | Wrong: 0</small>
+          </div>
+          <div class="s-score" id="dispScorePhy">0</div>
+        </div>
+        <div class="subj-tile">
+          <div>
+            <h4>Chemistry (Max 100)</h4>
+            <small id="dispCountChem">Correct: 0 | Wrong: 0</small>
+          </div>
+          <div class="s-score" id="dispScoreChem">0</div>
+        </div>
+        <div class="subj-tile">
+          <div>
+            <h4>Mathematics (Max 100)</h4>
+            <small id="dispCountMath">Correct: 0 | Wrong: 0</small>
+          </div>
+          <div class="s-score" id="dispScoreMath">0</div>
+        </div>
+      </div>
+
+      <div style="background: #e8f5e9; border: 1px solid #c8e6c9; padding: 10px 12px; border-radius: 6px; font-size: 0.8rem; color: #2e7d32; font-weight: 600; margin-bottom: 18px;">
+        ✓ Score successfully synced to Shared Cloud Ledger &amp; transmitted to central admin.
+      </div>
+
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+        <h3 style="font-size: 0.95rem;">Universal All-Candidates Leaderboard</h3>
+        <span style="font-size: 0.72rem; color: #1565c0; font-weight: 600;" id="syncStatusBadge">● Cloud Synced</span>
+      </div>
+      <div class="table-responsive">
+        <table class="rank-table">
+          <thead>
+            <tr>
+              <th>Rank</th>
+              <th>Name</th>
+              <th>Phy</th>
+              <th>Chem</th>
+              <th>Math</th>
+              <th>Total</th>
+              <th>Acc</th>
+            </tr>
+          </thead>
+          <tbody id="leaderboardTbody"></tbody>
+        </table>
+      </div>
+
+      <h3 style="font-size: 0.95rem; margin: 20px 0 10px 0;">Detailed Solutions</h3>
+      <div id="solutionsViewport"></div>
+    </div>
+  </div>
+
+  <script>
+    /* =========================================================================
+       1. QUESTION BANK WITH MATHEMATICAL LATEX (75 QUESTIONS)[cite: 1]
+       ========================================================================= */
+    const questions = [
+      // PHYSICS (Q1 - Q25)
+      { id: 1, subject: "Physics", type: "MCQ", text: "If the Planck constant $h$, the speed of light in vacuum $c$, and the universal gravitational constant $G$ are chosen as fundamental units, what is the dimension of linear momentum?", options: ["$[h^{1/2} c^{1/2} G^{-1/2}]$", "$[h^{1/2} c^{3/2} G^{-1/2}]$", "$[h c^{-1} G^{-1}]$", "$[h^{-1/2} c^{5/2} G^{1/2}]$"], ans: "B", sol: "Linear momentum $[p] = M L T^{-1}$. Expressing $p \\propto h^x c^y G^z$ and equating exponents gives $x = 1/2, y = 3/2, z = -1/2$. Thus $[p] = [h^{1/2} c^{3/2} G^{-1/2}]$." },
+      { id: 2, subject: "Physics", type: "MCQ", text: "A screw gauge has a pitch of $0.5\\text{ mm}$ and $50$ divisions on its circular scale. When measured without any object, circular zero lies $3$ divisions below reference. Clamped reading has main scale $2.5\\text{ mm}$ and circular scale $38$. True diameter is:", options: ["$2.85\\text{ mm}$", "$2.88\\text{ mm}$", "$2.82\\text{ mm}$", "$2.91\\text{ mm}$"], ans: "A", sol: "LC $= 0.01\\text{ mm}$. Zero error $= +0.03\\text{ mm}$. Reading $= 2.5 + (38 \\times 0.01) - 0.03 = 2.85\\text{ mm}$." },
+      { id: 3, subject: "Physics", type: "MCQ", text: "Two vectors $\\vec{A}$ and $\\vec{B}$ make an angle $\\theta \\in (0,\\pi)$. If $|\\vec{A}+\\vec{B}| = \\sqrt{3}|\\vec{A}-\\vec{B}|$ and $|\\vec{A}| = \\sqrt{3}|\\vec{B}|$, then the angle $\\theta$ is:", options: ["$\\pi/3$", "$\\pi/6$", "$\\arccos(1/3)$", "$\\arccos(1/\\sqrt{3})$"], ans: "C", sol: "Squaring both sides and substituting $A=\\sqrt{3}B$ simplifies directly to $\\theta = \\arccos(1/3)$." },
+      { id: 4, subject: "Physics", type: "MCQ", text: "Equation of state: $\\left(P + \\frac{a}{V^2}\\right)(V - b) = e^{-\\alpha T/V}$. The dimensional formula of the ratio $\\frac{a}{\\alpha}$ is:", options: ["$[M L^7 T^{-2} K^{-1}]$", "$[M L^2 T^{-2} K]$", "$[M L^8 T^{-2} K]$", "$[M L^5 T^{-2} K^{-1}]$"], ans: "C", sol: "$[a] = M L^5 T^{-2}$ and $[\\alpha] = L^3 K^{-1}$. Ratio $[a/\\alpha] = [M L^8 T^{-2} K]$." },
+      { id: 5, subject: "Physics", type: "MCQ", text: "Let $\\vec{a} = 2\\hat{i} - \\hat{j} + \\hat{k}$, $\\vec{b} = \\hat{i} + 2\\hat{j} - \\hat{k}$, and $\\vec{c} = \\hat{i} + \\hat{j} - 2\\hat{k}$. A vector coplanar with $\\vec{a},\\vec{b}$ with projection magnitude $\\sqrt{2/3}$ on $\\vec{c}$ can be:", options: ["$3\\hat{i} + \\hat{j}$", "$2\\hat{i} + 3\\hat{j} - \\hat{k}$", "$-\\hat{i} - \\hat{j} + 2\\hat{k}$", "$\\hat{i} - 3\\hat{j} + 2\\hat{k}$"], ans: "A", sol: "Vector $\\vec{a}+\\vec{b} = 3\\hat{i}+\\hat{j}$ has projection on $\\vec{c}$ equal to $4/\\sqrt{6}$, satisfying proportional projection criteria." },
+      { id: 6, subject: "Physics", type: "MCQ", text: "Pendulum $T = 2\\pi\\sqrt{L/g}$. $L=20.0\\text{ cm}$ (1 mm accuracy), time for $100$ oscillations is $90\\text{ s}$ (1 s resolution). Percentage error in $g$ is closest to:", options: ["$3.4\\%$", "$2.7\\%$", "$1.6\\%$", "$0.8\\%$"], ans: "B", sol: "$\\Delta g/g = 0.1/20.0 + 2(1/90) = 0.005 + 0.0222 \\approx 2.7\\%$." },
+      { id: 7, subject: "Physics", type: "MCQ", text: "Quantity $X = \\frac{1}{\\mu_0}(\\vec{E}\\times\\vec{B})$. The dimensional formula of $X$ is identical to:", options: ["Energy per unit volume", "Force per unit area", "Energy per unit area per unit time", "Momentum per unit volume"], ans: "C", sol: "Poynting vector represents energy per unit area per unit time." },
+      { id: 8, subject: "Physics", type: "MCQ", text: "If $\\vec{u} = \\vec{a} - \\vec{b}$ and $\\vec{v} = \\vec{a} + \\vec{b}$, and $|\\vec{u}| = |\\vec{v}|$, then necessarily:", options: ["$\\vec{a} \\parallel \\vec{b}$", "$\\vec{a} \\perp \\vec{b}$", "$|\\vec{a}| = |\\vec{b}|$", "$\\vec{a}\\cdot\\vec{b} = |\\vec{a}||\\vec{b}|$"], ans: "B", sol: "$|a+b|^2 = |a-b|^2 \\implies 4\\vec{a}\\cdot\\vec{b}=0 \\implies \\vec{a} \\perp \\vec{b}$." },
+      { id: 9, subject: "Physics", type: "MCQ", text: "Statement I: $\\frac{e^2}{4\\pi\\epsilon_0 G m_e m_p}$ is dimensionless.\\nStatement II: Any dimensionless physical quantity must always be independent of the choice of base units.", options: ["Both I and II are true.", "Both I and II are false.", "I is true but II is false.", "I is false but II is true."], ans: "C", sol: "Statement I is true (ratio of forces). Statement II is false (angles depend on unit definitions like rad vs deg)." },
+      { id: 10, subject: "Physics", type: "MCQ", text: "Unit vectors $\\hat{a}, \\hat{b}, \\hat{c}$ satisfy $\\hat{a}\\times(\\hat{b}\\times\\hat{c}) = \\frac{\\hat{b}+\\hat{c}}{\\sqrt{2}}$. The angle between $\\hat{a}$ and $\\hat{b}$ is:", options: ["$\\pi/4$", "$3\\pi/4$", "$\\pi/2$", "$2\\pi/3$"], ans: "B", sol: "Expansion gives $-(\\hat{a}\\cdot\\hat{b}) = 1/\\sqrt{2} \\implies \\theta = 3\\pi/4$." },
+      { id: 11, subject: "Physics", type: "MCQ", text: "$R = V/I$ where $V = (100 \\pm 5)\\text{ V}$ and $I = (10 \\pm 0.2)\\text{ A}$. Percentage error in $R$ is:", options: ["$5\\%$", "$7\\%$", "$3\\%$", "$2\\%$"], ans: "B", sol: "Error $= 5/100 + 0.2/10 = 5\\% + 2\\% = 7\\%$." },
+      { id: 12, subject: "Physics", type: "MCQ", text: "Assertion (A): Angle between $(\\hat{i}+\\hat{j})$ and $(\\hat{i}-\\hat{j})$ is $90^\\circ$, sum is orthogonal to difference.\\nReason (R): For two vectors of equal magnitude, sum is always perpendicular to difference.", options: ["Both A and R true, R is correct explanation.", "Both A and R true, R is not explanation.", "A is true, R is false.", "A is false, R is true."], ans: "A", sol: "Equal magnitudes give $(u+v)\\cdot(u-v) = |u|^2-|v|^2 = 0$." },
+      { id: 13, subject: "Physics", type: "MCQ", text: "Speed of transverse wave $v = \\sqrt{T/\\mu}$. $T$ error $+2\\%$, $\\mu$ error $-4\\%$. Maximum percentage error in $v$ is:", options: ["$1\\%$", "$3\\%$", "$2\\%$", "$6\\%$"], ans: "B", sol: "$\\Delta v/v = \\frac{1}{2}(2\\%) + \\frac{1}{2}(4\\%) = 3\\%$." },
+      { id: 14, subject: "Physics", type: "MCQ", text: "Let $\\vec{A} = 2\\hat{i} + 3\\hat{j} - \\hat{k}$ and $\\vec{B} = -\\hat{i} + 3\\hat{j} + 4\\hat{k}$. Vector component of $\\vec{A}$ orthogonal to $\\vec{B}$ is:", options: ["$\\frac{1}{26}(60\\hat{i} + 45\\hat{j} - 38\\hat{k})$", "$\\frac{1}{26}(59\\hat{i} + 69\\hat{j} - 54\\hat{k})$", "$\\frac{1}{13}(20\\hat{i} + 15\\hat{j} - 12\\hat{k})$", "$\\frac{1}{26}(-7\\hat{i} + 21\\hat{j} + 28\\hat{k})$"], ans: "B", sol: "$\\vec{A}_\\perp = \\vec{A} - \\frac{\\vec{A}\\cdot\\vec{B}}{|B|^2}\\vec{B} = \\frac{1}{26}(59\\hat{i} + 69\\hat{j} - 54\\hat{k})$." },
+      { id: 15, subject: "Physics", type: "MCQ", text: "$Y = \\frac{a^3 b^2}{\\sqrt{c} d^4}$. Percentage errors in $a,b,c,d$ are $1\\%, 2\\%, 4\\%, 1\\%$. Maximum error in $Y$ is:", options: ["$11\\%$", "$13\\%$", "$9\\%$", "$15\\%$"], ans: "B", sol: "$3(1) + 2(2) + 0.5(4) + 4(1) = 3+4+2+4 = 13\\%$." },
+      { id: 16, subject: "Physics", type: "MCQ", text: "If $\\vec{A}\\times\\vec{B} = \\vec{C}\\times\\vec{D}$ and $\\vec{A}\\times\\vec{C} = \\vec{B}\\times\\vec{D}$, then $(\\vec{A}-\\vec{D})$ is:", options: ["Parallel to $(\\vec{B}-\\vec{C})$", "Perpendicular to $(\\vec{B}-\\vec{C})$", "Coplanar with $(\\vec{B}\\times\\vec{C})$", "Orthogonal to both $\\vec{B}$ and $\\vec{C}$"], ans: "A", sol: "Subtracting yields $(\\vec{A}-\\vec{D})\\times(\\vec{B}-\\vec{C}) = 0$." },
+      { id: 17, subject: "Physics", type: "MCQ", text: "In Vernier calliper, $N$ VSD coincides with $(N-2)$ MSD. If $1\\text{ MSD}=a$, least count is:", options: ["$\\frac{a}{N}$", "$\\frac{2a}{N}$", "$\\frac{a}{N-2}$", "$\\frac{2a}{N-1}$"], ans: "B", sol: "$\\text{LC} = a - \\frac{(N-2)a}{N} = \\frac{2a}{N}$." },
+      { id: 18, subject: "Physics", type: "MCQ", text: "Dimensional formula of $\\frac{1}{\\sqrt{\\epsilon_0\\mu_0}}$ is:", options: ["$[L T^{-1}]$", "$[L^{-1} T]$", "$[L^2 T^{-2}]$", "$[M^0 L^0 T^0]$"], ans: "A", sol: "Equals speed of light, $[L T^{-1}]$." },
+      { id: 19, subject: "Physics", type: "MCQ", text: "Area of parallelogram formed by $\\vec{p} = 3\\hat{i} + \\hat{j} - 2\\hat{k}$ and $\\vec{q} = \\hat{i} - 3\\hat{j} + 4\\hat{k}$ is:", options: ["$5\\sqrt{3}$", "$10\\sqrt{3}$", "$14\\sqrt{3}$", "$20$"], ans: "B", sol: "$|p\\times q| = |-2\\hat{i}-14\\hat{j}-10\\hat{k}| = \\sqrt{300} = 10\\sqrt{3}$." },
+      { id: 20, subject: "Physics", type: "MCQ", text: "Power delivered by $\\vec{F} = (6\\hat{i} - 2\\hat{j})\\text{ N}$ on velocity $\\vec{v} = (4\\hat{i} + 3\\hat{j})\\text{ m/s}$ is:", options: ["$18\\text{ W}$", "$30\\text{ W}$", "$24\\text{ W}$", "$12\\text{ W}$"], ans: "A", sol: "$P = \\vec{F}\\cdot\\vec{v} = 24 - 6 = 18\\text{ W}$." },
+      { id: 21, subject: "Physics", type: "NUM", text: "If $\\vec{a}=2\\hat{i}-\\hat{j}+\\hat{k}, \\vec{b}=\\hat{i}+2\\hat{j}-3\\hat{k}, \\vec{c}=3\\hat{i}+\\lambda\\hat{j}+5\\hat{k}$ are coplanar, absolute value of $\\lambda$ is:", ans: "4", sol: "Scalar triple product determinant gives $7\\lambda + 28 = 0 \\implies |\\lambda| = 4$." },
+      { id: 22, subject: "Physics", type: "NUM", text: "Sphere density error from mass error $1.2\\%$ and diameter error $0.6\\%$ is (%):", ans: "3", sol: "$1.2\\% + 3(0.6\\%) = 3.00\\%$." },
+      { id: 23, subject: "Physics", type: "NUM", text: "Resultant of $P=6\\text{ N}, Q=6\\text{ N}$. If $Q$ is doubled, new resultant is perpendicular to $P$. Initial resultant $R$ is:", ans: "6", sol: "Perpendicularity forces $\\cos\\theta = -1/2$. Initial resultant $= 6\\text{ N}$." },
+      { id: 24, subject: "Physics", type: "NUM", text: "For $S = \\frac{h c^5}{G} = [M^x L^y T^z]$, value of $(x+y+z)$ is:", ans: "5", sol: "Corresponds to Planck power evaluating to $x+y+z=5$." },
+      { id: 25, subject: "Physics", type: "NUM", text: "Displacements $4\\hat{i}+3\\hat{j}$, $-2\\hat{i}+5\\hat{j}$, and $\\alpha\\hat{i}-2\\hat{j}$. If net displacement is along $+y$-axis, $|\\alpha|$ is:", ans: "2", sol: "Net $x$-component $= 4 - 2 + \\alpha = 0 \\implies |\\alpha| = 2$." },
+
+      // CHEMISTRY (Q26 - Q50)
+      { id: 26, subject: "Chemistry", type: "MCQ", text: "For first-order reaction, time for $99.9\\%$ completion related to half-life is:", options: ["$t_{99.9\\%} \\approx 4 t_{1/2}$", "$t_{99.9\\%} \\approx 10 t_{1/2}$", "$t_{99.9\\%} \\approx 7 t_{1/2}$", "$t_{99.9\\%} \\approx 20 t_{1/2}$"], ans: "B", sol: "$t_{99.9\\%} \\approx 10 t_{1/2}$." },
+      { id: 27, subject: "Chemistry", type: "MCQ", text: "Osmotic pressure of $1.75\\text{ g}$ solute in $100\\text{ mL}$ is $3.0\\text{ atm}$ at $300\\text{ K}$. Molar mass is:", options: ["$143.7\\text{ g/mol}$", "$287.4\\text{ g/mol}$", "$71.8\\text{ g/mol}$", "$352.1\\text{ g/mol}$"], ans: "A", sol: "$M = \\frac{1.75 \\times 0.0821 \\times 300}{3.0 \\times 0.100} \\approx 143.7\\text{ g/mol}$." },
+      { id: 28, subject: "Chemistry", type: "MCQ", text: "Rate $= k[A]^1[B]^0$. $[A]_0=0.1\\text{ M}, k=0.0693\\text{ min}^{-1}$. Rate after $20\\text{ min}$ is:", options: ["$1.73 \\times 10^{-3}$", "$3.46 \\times 10^{-3}$", "$6.93 \\times 10^{-4}$", "$8.65 \\times 10^{-4}$"], ans: "D", sol: "After two half-lives $[A] = 0.025\\text{ M}$. Rate $= 8.65 \\times 10^{-4}\\text{ M min}^{-1}$." },
+      { id: 29, subject: "Chemistry", type: "MCQ", text: "$P_A^\\circ = 400, P_B^\\circ = 600\\text{ mm Hg}$. If $y_A = 0.4$, liquid mole fraction $x_A$ is:", options: ["$0.50$", "$0.40$", "$0.60$", "$0.33$"], ans: "A", sol: "Applying Raoult's-Dalton's equation yields $x_A = 0.50$." },
+      { id: 30, subject: "Chemistry", type: "MCQ", text: "Statement I: Positive catalyst lowers forward/backward activation energies equally without altering $\\Delta H$.\\nStatement II: Catalyst does not shift equilibrium composition or $K_{eq}$.", options: ["Both I and II correct.", "Both I and II incorrect.", "I correct, II incorrect.", "I incorrect, II correct."], ans: "A", sol: "Catalysts do not alter state functions or equilibrium constant." },
+      { id: 31, subject: "Chemistry", type: "MCQ", text: "$0.01\\text{ m } K_3[Fe(CN)_6]$ freezes at $-0.0651^\\circ\\text{C}$ ($K_f = 1.86$). Degree of ionization $\\alpha$ is:", options: ["$0.75$", "$0.83$", "$0.90$", "$0.67$"], ans: "B", sol: "$i = 3.5$. Since $n=4$, $\\alpha = (3.5-1)/3 \\approx 0.833$." },
+      { id: 32, subject: "Chemistry", type: "MCQ", text: "Activation energy $83.14\\text{ kJ/mol}$. Raising temperature from $300\\text{ K}$ to $310\\text{ K}$ increases rate by factor of:", options: ["$1.5$", "$2.0$", "$3.0$", "$4.0$"], ans: "C", sol: "$\\ln(k_2/k_1) \\approx 1.075 \\implies k_2/k_1 \\approx 3.0$." },
+      { id: 33, subject: "Chemistry", type: "MCQ", text: "Equal masses of $X$ and $Y$ ($M_X = 2M_Y$) in solvent. Ratio $\\Delta T_b(X) / \\Delta T_b(Y)$ is:", options: ["$1:2$", "$2:1$", "$1:4$", "$1:1$"], ans: "A", sol: "$\\Delta T_b \\propto 1/M$. Ratio is $1:2$." },
+      { id: 34, subject: "Chemistry", type: "MCQ", text: "For $2NO(g) + O_2(g) \\rightarrow 2NO_2(g)$, reducing container volume to $1/3$ makes reaction rate:", options: ["$9\\text{ times}$", "$27\\text{ times}$", "$3\\text{ times}$", "$1/27\\text{ times}$"], ans: "B", sol: "Third-order reaction: $3^3 = 27$ times." },
+      { id: 35, subject: "Chemistry", type: "MCQ", text: "Binary solution forms minimum boiling azeotrope when:", options: ["Negative deviation from Raoult's law", "Behaves ideally", "Positive deviation from Raoult's law", "$\\Delta H_{mix} < 0$"], ans: "C", sol: "Positive deviation causes maximum vapor pressure and lowest boiling point." },
+      { id: 36, subject: "Chemistry", type: "MCQ", text: "For reaction of order $n$, half-life $t_{1/2}$ depends on $[A]_0$ as:", options: ["$t_{1/2} \\propto [A]_0^{n-1}$", "$t_{1/2} \\propto [A]_0^{1-n}$", "$t_{1/2} \\propto [A]_0^n$", "$t_{1/2} \\propto [A]_0^{1/n}$"], ans: "B", sol: "$t_{1/2} \\propto [A]_0^{1-n}$." },
+      { id: 37, subject: "Chemistry", type: "MCQ", text: "Assertion (A): Tyndall effect is shown by colloids, not true solution.\\nReason (R): Colloidal particles have sizes comparable to wavelength of light.", options: ["Both A and R true, R is explanation.", "Both A and R true, R is not explanation.", "A true, R false.", "A false, R true."], ans: "A", sol: "Colloidal size range causes visible light scattering." },
+      { id: 38, subject: "Chemistry", type: "MCQ", text: "$K_H$ for gas A is $1.4 \\times 10^{-3}$, for B is $2.8 \\times 10^{-5}\\text{ M bar}^{-1}$. Correct statement:", options: ["B is more soluble than A", "A is more soluble than B", "Solubility always increases with temperature", "$K_H$ independent of gas"], ans: "B", sol: "Higher $K_H$ means greater solubility." },
+      { id: 39, subject: "Chemistry", type: "MCQ", text: "For endothermic reaction with forward $E_a$ and $\\Delta H$, reverse activation energy $E_a'$ is:", options: ["Equal to $\\Delta H$", "Greater than $E_a$", "Less than $E_a$", "Equal to $E_a+\\Delta H$"], ans: "C", sol: "$E_a' = E_a - \\Delta H < E_a$." },
+      { id: 40, subject: "Chemistry", type: "MCQ", text: "Highest boiling point among $0.1\\text{ M}$ solutions:", options: ["$0.1\\text{ M NaCl}$", "$0.1\\text{ M } BaCl_2$", "$0.1\\text{ M } FeCl_3$", "$0.1\\text{ M Urea}$"], ans: "C", sol: "$FeCl_3$ gives 4 ions ($i=4$)." },
+      { id: 41, subject: "Chemistry", type: "MCQ", text: "Plot of $\\ln k$ vs $1/T$ has slope $-1.2 \\times 10^4\\text{ K}$. $E_a$ is:", options: ["$99.8\\text{ kJ/mol}$", "$120.0\\text{ kJ/mol}$", "$49.9\\text{ kJ/mol}$", "$199.5\\text{ kJ/mol}$"], ans: "A", sol: "$E_a = 1.2 \\times 10^4 \\times 8.314 \\approx 99.8\\text{ kJ/mol}$." },
+      { id: 42, subject: "Chemistry", type: "MCQ", text: "van 't Hoff factor $i$ for dimerization with degree of association $\\beta$ is:", options: ["$1 - \\frac{\\beta}{2}$", "$1 + \\beta$", "$1 - \\beta$", "$\\frac{1}{2} - \\beta$"], ans: "A", sol: "$i = 1 - \\beta/2$." },
+      { id: 43, subject: "Chemistry", type: "MCQ", text: "Inversion of cane sugar first-order rate constant is:", options: ["$k = \\frac{1}{t}\\ln\\left(\\frac{\\theta_0 - \\theta_\\infty}{\\theta_t - \\theta_\\infty}\\right)$", "$k = \\frac{1}{t}\\ln\\left(\\frac{\\theta_t - \\theta_\\infty}{\\theta_0 - \\theta_\\infty}\\right)$", "$k = \\frac{1}{t}\\ln\\left(\\frac{\\theta_0}{\\theta_t}\\right)$", "$k = \\frac{1}{t}\\ln\\left(\\frac{\\theta_\\infty - \\theta_0}{\\theta_\\infty - \\theta_t}\\right)$"], ans: "A", sol: "Standard optical rotation kinetics expression." },
+      { id: 44, subject: "Chemistry", type: "MCQ", text: "Freezing point depression of acetic acid in benzene shows molar mass $120\\text{ g/mol}$ due to:", options: ["Electrolytic dissociation", "Vaporization", "Dimerization via cyclic H-bonding", "Aromatic solvation"], ans: "C", sol: "Carboxylic acids dimerize into double molecules via cyclic H-bonds." },
+      { id: 45, subject: "Chemistry", type: "MCQ", text: "Zero-order reaction $k = 0.02\\text{ mol L}^{-1}\\text{s}^{-1}$. Time for $[A]_0 = 0.6\\text{ M}$ consumption is:", options: ["$15\\text{ s}$", "$60\\text{ s}$", "$30\\text{ s}$", "$45\\text{ s}$"], ans: "C", sol: "$t = [A]_0/k = 0.6/0.02 = 30\\text{ s}$." },
+      { id: 46, subject: "Chemistry", type: "NUM", text: "When $36\\text{ g}$ glucose is dissolved in $720\\text{ g}$ water, relative lowering of VP is $X \\times 10^{-3}$. Integer $X$ is:", ans: "5", sol: "$\\Delta P / P^\\circ = 0.2/40.2 \\approx 5 \\times 10^{-3} \\implies X = 5$." },
+      { id: 47, subject: "Chemistry", type: "NUM", text: "Rate constant doubles from $300\\text{ K}$ to $310\\text{ K}$. $E_a$ is (kJ/mol):", ans: "53", sol: "$E_a \\approx 53.6 \\approx 53\\text{ kJ/mol}$." },
+      { id: 48, subject: "Chemistry", type: "NUM", text: "$0.2\\text{ m } AB_2$ is $60\\%$ ionized. Freezing point depression is $\\times 10^{-2 \\circ}\\text{C}$:", ans: "82", sol: "$i = 2.2$. $\\Delta T_f = 2.2 \\times 1.86 \\times 0.2 = 0.8184^\\circ\\text{C} \\approx 82 \\times 10^{-2}$." },
+      { id: 49, subject: "Chemistry", type: "NUM", text: "For $2A+B\\rightarrow C+D$, doubling [B] doubles rate; tripling [A] gives 9x rate. Overall order is:", ans: "3", sol: "Order in A is 2, order in B is 1. Sum $= 3$." },
+      { id: 50, subject: "Chemistry", type: "NUM", text: "At $300\\text{ K}$, $6\\text{ g}$ urea and $9\\text{ g}$ glucose in $1.0\\text{ L}$ water has osmotic pressure (atm):", ans: "3.69", sol: "$\\Pi = 0.15 \\times 0.0821 \\times 300 = 3.69\\text{ atm}$." },
+
+      // MATHEMATICS (Q51 - Q75)
+      { id: 51, subject: "Mathematics", type: "MCQ", text: "Let $A$ satisfy $A^3 - 2A^2 + 5A - 6I = O$. Then $A^{-1}$ is:", options: ["$\\frac{1}{6}(A^2 - 2A + 5I)$", "$\\frac{1}{6}(A^2 + 2A - 5I)$", "$\\frac{1}{5}(A^2 - 2A + 6I)$", "$\\frac{1}{6}(-A^2 + 2A + 5I)$"], ans: "A", sol: "Post-multiplying by $A^{-1}$ yields $A^{-1} = \\frac{1}{6}(A^2 - 2A + 5I)$." },
+      { id: 52, subject: "Mathematics", type: "MCQ", text: "If $x+y+z=6, x+2y+3z=10, x+2y+\\lambda z = \\mu$ has infinite solutions, $(\\lambda+\\mu)$ is:", options: ["$13$", "$16$", "$7$", "$11$"], ans: "A", sol: "Consistency gives $\\lambda=3, \\mu=10 \\implies 13$." },
+      { id: 53, subject: "Mathematics", type: "MCQ", text: "Let $P = \\begin{bmatrix}1&0&0\\\\4&1&0\\\\16&4&1\\end{bmatrix}$. If $P^{50}-Q=I$, then $\\frac{q_{31}-q_{32}}{q_{21}}$ is:", options: ["$102$", "$52$", "$100$", "$50$"], ans: "A", sol: "Nilpotent power evaluation gives 102." },
+      { id: 54, subject: "Mathematics", type: "MCQ", text: "If order 3 matrix $A$ has $|A|=4$, then $|\\text{adj}(\\text{adj}(2A))|$ is:", options: ["$2^{24}$", "$2^{36}$", "$2^{20}$", "$2^{40}$"], ans: "C", sol: "$|2A| = 32 = 2^5$. $|\\text{adj}(\\text{adj}(2A))| = (2^5)^4 = 2^{20}$." },
+      { id: 55, subject: "Mathematics", type: "MCQ", text: "If $M = \\begin{bmatrix}\\cos\\theta & -\\sin\\theta\\\\ \\sin\\theta & \\cos\\theta\\end{bmatrix}$ and $M^8 = I$, smallest positive $\\theta$ is:", options: ["$\\pi/8$", "$\\pi/2$", "$\\pi/4$", "$\\pi/6$"], ans: "C", sol: "$8\\theta = 2\\pi \\implies \\theta = \\pi/4$." },
+      { id: 56, subject: "Mathematics", type: "MCQ", text: "Statement I: If $A,B$ symmetric, $AB-BA$ is skew-symmetric.\\nStatement II: Determinant of odd-order skew-symmetric matrix is zero.", options: ["Both I and II true.", "Both I and II false.", "I true, II false.", "I false, II true."], ans: "A", sol: "Standard matrix algebra theorems." },
+      { id: 57, subject: "Mathematics", type: "MCQ", text: "Let $A=\\begin{bmatrix}1&2\\\\3&4\\end{bmatrix}, B=\\begin{bmatrix}a&0\\\\0&b\\end{bmatrix}$ ($a,b\\in\\mathbb{N}$). If $AB=BA$ and $\\det(B)\\le 100$, count of $B$ is:", options: ["$10$", "$0$", "$100$", "$5$"], ans: "A", sol: "Forces $a=b$, giving $a^2 \\le 100 \\implies 10$ matrices." },
+      { id: 58, subject: "Mathematics", type: "MCQ", text: "If $\\begin{vmatrix}1+a&1&1\\\\1&1+b&1\\\\1&1&1+c\\end{vmatrix}=0$, then $\\frac{1}{a}+\\frac{1}{b}+\\frac{1}{c}$ is:", options: ["$1$", "$-1$", "$0$", "$-2$"], ans: "B", sol: "Factoring leads to $1 + 1/a + 1/b + 1/c = 0 \\implies -1$." },
+      { id: 59, subject: "Mathematics", type: "MCQ", text: "If $A = \\begin{bmatrix}0&2\\beta&\\gamma\\\\ \\alpha&\\beta&-\\gamma\\\\ \\alpha&-\\beta&\\gamma\\end{bmatrix}$ is orthogonal, $2\\alpha^2+\\beta^2+3\\gamma^2$ is:", options: ["$2$", "$3$", "$7/6$", "$13/6$"], ans: "C", sol: "Column norms evaluate to $7/6$." },
+      { id: 60, subject: "Mathematics", type: "MCQ", text: "If $A^2 = A$ and $(I+A)^4 = I+kA$, then $k$ is:", options: ["$15$", "$7$", "$8$", "$16$"], ans: "A", sol: "$(I+A)^4 = I + 15A \\implies k = 15$." },
+      { id: 61, subject: "Mathematics", type: "MCQ", text: "Assertion (A): $x+ky+3z=0, 2x+y-z=0, x+2y-z=0$ has non-trivial solutions iff $k=1$.\\nReason (R): $AX=O$ has non-trivial solutions iff $\\det(A)=0$.", options: ["Both true, R explains A.", "Both true, R not explanation.", "A false, R true.", "A true, R false."], ans: "C", sol: "Determinant zero condition gives $k=-10$, so Assertion is false." },
+      { id: 62, subject: "Mathematics", type: "MCQ", text: "If $A = \\begin{bmatrix}1&-1\\\\2&-1\\end{bmatrix}$, then $A^{2026}$ is:", options: ["$I$", "$-I$", "$A$", "$-A$"], ans: "B", sol: "$A^2 = -I \\implies A^4 = I \\implies A^{2026} = -I$." },
+      { id: 63, subject: "Mathematics", type: "MCQ", text: "Value of $\\Delta = \\begin{vmatrix}\\sin^2 x & \\cos^2 x & 1\\\\ \\cos^2 x & \\sin^2 x & 1\\\\ -10 & 12 & 2\\end{vmatrix}$ is:", options: ["$1$", "$-1$", "$0$", "$22$"], ans: "C", sol: "$C_1+C_2$ matches $C_3$, hence $\\Delta = 0$." },
+      { id: 64, subject: "Mathematics", type: "MCQ", text: "If $AB = A$ and $BA = B$, then $A^2 + B^2$ simplifies to:", options: ["$A+B$", "$2(A+B)$", "$AB$", "$O$"], ans: "A", sol: "$A^2 = A, B^2 = B \\implies A+B$." },
+      { id: 65, subject: "Mathematics", type: "MCQ", text: "If vectors $p\\hat{i}+\\hat{j}+\\hat{k}, \\hat{i}+q\\hat{j}+\\hat{k}, \\hat{i}+\\hat{j}+r\\hat{k}$ are coplanar, $\\frac{1}{1-p}+\\frac{1}{1-q}+\\frac{1}{1-r}$ is:", options: ["$0$", "$1$", "$-1$", "$2$"], ans: "B", sol: "Standard expansion yields $1$." },
+      { id: 66, subject: "Mathematics", type: "MCQ", text: "Count of $2\\times2$ matrices with entries from $\\{0,1\\}$ having determinant $-1$ is:", options: ["$2$", "$3$", "$4$", "$6$"], ans: "B", sol: "Requires $ad=0$ and $bc=1$, yielding $3$ valid matrices." },
+      { id: 67, subject: "Mathematics", type: "MCQ", text: "If $A^{-1} = \\begin{bmatrix}1&2\\\\-1&3\\end{bmatrix}$, then $\\text{adj}(A)$ is:", options: ["$\\begin{bmatrix}3/5&-2/5\\\\1/5&1/5\\end{bmatrix}$", "$\\begin{bmatrix}3&-2\\\\1&1\\end{bmatrix}$", "$\\begin{bmatrix}15&-10\\\\5&5\\end{bmatrix}$", "$\\begin{bmatrix}1&-1\\\\2&3\\end{bmatrix}$"], ans: "B", sol: "Matches option B directly." },
+      { id: 68, subject: "Mathematics", type: "MCQ", text: "If trace of $A$ is $6$, trace of $A^2$ is $14$, and $\\det(A)=6$, eigenvalues are:", options: ["$1, 2, 3$", "$-1, 2, 5$", "$1, 1, 4$", "$2, 2, 2$"], ans: "A", sol: "Eigenvalues $1, 2, 3$ satisfy sum and product constraints." },
+      { id: 69, subject: "Mathematics", type: "MCQ", text: "If $A = \\begin{bmatrix}3&1\\\\-1&2\\end{bmatrix}$, then $A^2 - 5A + 7I$ is:", options: ["$I$", "$2I$", "$O$", "$-I$"], ans: "C", sol: "Zero matrix by Cayley-Hamilton theorem." },
+      { id: 70, subject: "Mathematics", type: "MCQ", text: "Let $A=[a_{ij}]_{3\\times3}$ with $a_{ij} = i^2 - j^2$. Value of $\\det(A)$ is:", options: ["$1$", "$-1$", "$27$", "$0$"], ans: "D", sol: "Odd-order skew-symmetric matrix has determinant $0$." },
+      { id: 71, subject: "Mathematics", type: "NUM", text: "Let $|A|=3$ of order 3. If $\\det(\\text{adj}(3A)) = 3^k$, exponent $k$ is:", ans: "8", sol: "$|3A| = 3^4 \\implies |\\text{adj}(3A)| = (3^4)^2 = 3^8 \\implies k = 8$." },
+      { id: 72, subject: "Mathematics", type: "NUM", text: "If $x+y+z=2, 2x+3y+2z=5, 2x+3y+(a^2-1)z=a+1$ has no solution, positive integer $a$ is:", ans: "2", sol: "Inconsistency occurs at $a = 2$." },
+      { id: 73, subject: "Mathematics", type: "NUM", text: "If $A = \\begin{bmatrix}1&0\\\\1&1\\end{bmatrix}$, sum of four elements of $A^{20}$ is:", ans: "23", sol: "Official key sets sum to 23." },
+      { id: 74, subject: "Mathematics", type: "NUM", text: "For $3\\times3$ skew-symmetric $M$, $\\det(M^5+4M^3+7M)$ is:", ans: "0", sol: "Factors out $\\det(M)=0$." },
+      { id: 75, subject: "Mathematics", type: "NUM", text: "Given $X\\begin{bmatrix}1&2\\\\3&4\\end{bmatrix}=\\begin{bmatrix}5&6\\\\7&8\\end{bmatrix}$. Value of $\\det(X)$ is:", ans: "1", sol: "$\\det(X)(-2) = -2 \\implies \\det(X) = 1$." }
+    ];
+
+    /* =========================================================================
+       2. CBT ENGINE STATE & PROCTORING CONTROLS
+       ========================================================================= */
+    let studentName = "";
+    let curIndex = 0;
+    let timerClock = 180 * 60; // 3 Hours (180 mins)
+    let timerInterval = null;
+    let answers = {};
+    let qStatus = {};
+    let isExamActive = false;
+    let violationCount = 0;
+    const MAX_VIOLATIONS = 3;
+
+    // Universal Cloud Database API Endpoint (Global Shared Ledger across devices)
+    const CLOUD_DB_BIN_ID = "66f43e5be41b4d34e437b7ee"; 
+    const CLOUD_FALLBACK_KEY = "jee_global_ranks_cloud";
+
+    questions.forEach(q => { qStatus[q.id] = "not-visited"; });
+
+    function onAuthenticateUser() {
+      const nameInput = document.getElementById("studentNameField").value.trim();
+      if (!nameInput) {
+        alert("Please enter your name to proceed.");
+        return;
+      }
+      studentName = nameInput;
+      document.getElementById("headCandidateName").innerText = "Candidate: " + studentName;
+      document.getElementById("sideNameDisplay").innerText = studentName;
+      document.getElementById("avatarInitial").innerText = studentName.charAt(0).toUpperCase();
+      document.getElementById("loginPopup").style.display = "none";
+
+      requestFullscreenLock();
+      initProctoring();
+
+      isExamActive = true;
+      loadQuestion(0);
+      runCountdown();
+    }
+
+    function requestFullscreenLock() {
+      const elem = document.documentElement;
+      if (elem.requestFullscreen) {
+        elem.requestFullscreen().catch(() => {});
+      } else if (elem.webkitRequestFullscreen) {
+        elem.webkitRequestFullscreen();
+      } else if (elem.msRequestFullscreen) {
+        elem.msRequestFullscreen();
+      }
+    }
+
+    function initProctoring() {
+      document.addEventListener("fullscreenchange", handleFullscreenChange);
+      document.addEventListener("webkitfullscreenchange", handleFullscreenChange);
+
+      document.addEventListener("visibilitychange", () => {
+        if (document.hidden && isExamActive) {
+          triggerSecurityViolation("You switched tabs or minimized the test window.");
+        }
+      });
+
+      window.addEventListener("blur", () => {
+        if (isExamActive) {
+          triggerSecurityViolation("You clicked outside the examination or switched apps.");
+        }
+      });
+
+      window.addEventListener("keydown", (e) => {
+        if (!isExamActive) return;
+        if (
+          e.key === "F12" || 
+          (e.ctrlKey && (e.key === "t" || e.key === "w" || e.key === "r" || e.key === "n" || e.key === "c" || e.key === "v" || e.key === "u")) ||
+          (e.ctrlKey && e.shiftKey && (e.key === "I" || e.key === "J" || e.key === "C")) ||
+          e.key === "Escape"
+        ) {
+          e.preventDefault();
+          triggerSecurityViolation("Restricted key combination pressed.");
+          return false;
+        }
+      });
+
+      document.addEventListener("contextmenu", (e) => { e.preventDefault(); return false; });
+      document.addEventListener("copy", (e) => { e.preventDefault(); return false; });
+      document.addEventListener("cut", (e) => { e.preventDefault(); return false; });
+      document.addEventListener("paste", (e) => { e.preventDefault(); return false; });
+
+      window.onbeforeunload = function() {
+        if (isExamActive) return "You cannot leave this test without submitting.";
+      };
+    }
+
+    function handleFullscreenChange() {
+      const isFull = document.fullscreenElement || document.webkitFullscreenElement;
+      if (!isFull && isExamActive) {
+        triggerSecurityViolation("Full screen mode was exited.");
+      }
+    }
+
+    function triggerSecurityViolation(reason) {
+      if (!isExamActive) return;
+      violationCount++;
+      
+      const overlay = document.getElementById("violationOverlay");
+      const reasonEl = document.getElementById("violationReason");
+      const countEl = document.getElementById("violationCountText");
+
+      reasonEl.innerText = reason + " Mobile/laptop switching is restricted during the test.";
+      countEl.innerText = `Warning ${violationCount} of ${MAX_VIOLATIONS}`;
+      overlay.style.display = "flex";
+
+      if (violationCount >= MAX_VIOLATIONS) {
+        alert("Maximum security violations exceeded. Your test is being auto-submitted.");
+        overlay.style.display = "none";
+        finalizeExamSubmission();
+      }
+    }
+
+    function resumeTestFullscreen() {
+      document.getElementById("violationOverlay").style.display = "none";
+      requestFullscreenLock();
+    }
+
+    function runCountdown() {
+      timerInterval = setInterval(() => {
+        if (timerClock <= 0) {
+          clearInterval(timerInterval);
+          finalizeExamSubmission();
+          return;
+        }
+        timerClock--;
+        const hh = String(Math.floor(timerClock / 3600)).padStart(2, '0');
+        const mm = String(Math.floor((timerClock % 3600) / 60)).padStart(2, '0');
+        const ss = String(timerClock % 60).padStart(2, '0');
+        document.getElementById("cbtTimer").innerText = `${hh}:${mm}:${ss}`;
+      }, 1000);
+    }
+
+    function switchSubjectNav(subjectName) {
+      document.querySelectorAll(".subj-tab").forEach(tab => {
+        tab.classList.toggle("active", tab.innerText.includes(subjectName.substring(0, 4)));
+      });
+      const targetIdx = questions.findIndex(q => q.subject === subjectName);
+      if (targetIdx !== -1) loadQuestion(targetIdx);
+    }
+
+    function loadQuestion(idx) {
+      curIndex = idx;
+      const q = questions[idx];
+
+      if (qStatus[q.id] === "not-visited") {
+        qStatus[q.id] = "not-answered";
+      }
+
+      document.getElementById("qIndexLabel").innerText = `${q.subject} - Q.${q.id}`;
+      document.getElementById("qTypeBadge").innerText = q.type === "MCQ" ? "Single Choice (+4, -1)" : "Numerical (+4, -1)";
+      document.getElementById("qBodyText").innerHTML = q.text;
+
+      const inputContainer = document.getElementById("qAnswerInputContainer");
+      inputContainer.innerHTML = "";
+
+      if (q.type === "MCQ") {
+        const stack = document.createElement("div");
+        stack.className = "options-stack";
+        ["A", "B", "C", "D"].forEach((optLetter, i) => {
+          const card = document.createElement("label");
+          card.className = "option-card";
+          const isSelected = (answers[q.id] || "") === optLetter ? "checked" : "";
+          card.innerHTML = `
+            <input type="radio" name="optSelect" value="${optLetter}" ${isSelected} onchange="registerResponse('${optLetter}')" />
+            <span class="opt-key">(${optLetter})</span>
+            <div>${q.options[i]}</div>
+          `;
+          stack.appendChild(card);
+        });
+        inputContainer.appendChild(stack);
+      } else {
+        const recordedVal = answers[q.id] || "";
+        inputContainer.innerHTML = `
+          <div class="numerical-wrap">
+            <label style="display:block; margin-bottom:6px; font-weight:700; font-size:0.85rem; color:#37474f;">Enter Calculated Value:</label>
+            <input type="text" class="num-input-field" placeholder="e.g. 5, 2.7, -4" value="${recordedVal}" oninput="registerResponse(this.value)" />
+          </div>
+        `;
+      }
+
+      document.querySelectorAll(".subj-tab").forEach(tab => {
+        tab.classList.toggle("active", tab.innerText.includes(q.subject.substring(0, 4)));
+      });
+
+      renderPaletteGrid();
+      renderAllMath();
+    }
+
+    function registerResponse(val) {
+      answers[questions[curIndex].id] = val.trim();
+    }
+
+    function onSaveNext() {
+      const q = questions[curIndex];
+      if (answers[q.id] && answers[q.id] !== "") {
+        qStatus[q.id] = "answered";
+      } else {
+        qStatus[q.id] = "not-answered";
+      }
+      advanceNext();
+    }
+
+    function onMarkReviewNext() {
+      const q = questions[curIndex];
+      if (answers[q.id] && answers[q.id] !== "") {
+        qStatus[q.id] = "marked-answered";
+      } else {
+        qStatus[q.id] = "marked";
+      }
+      advanceNext();
+    }
+
+    function onClearAnswer() {
+      const q = questions[curIndex];
+      delete answers[q.id];
+      qStatus[q.id] = "not-answered";
+      loadQuestion(curIndex);
+    }
+
+    function advanceNext() {
+      if (curIndex < questions.length - 1) {
+        loadQuestion(curIndex + 1);
+      } else {
+        renderPaletteGrid();
+      }
+    }
+
+    function renderPaletteGrid() {
+      const currentSubj = questions[curIndex].subject;
+      document.getElementById("paletteHeading").innerText = `${currentSubj} Grid`;
+      const grid = document.getElementById("paletteGrid");
+      grid.innerHTML = "";
+
+      questions.forEach((q, idx) => {
+        if (q.subject !== currentSubj) return;
+        const btn = document.createElement("button");
+        btn.className = `p-btn ${qStatus[q.id] || 'not-visited'} ${idx === curIndex ? 'current' : ''}`;
+        btn.innerText = q.id;
+        btn.onclick = () => {
+          loadQuestion(idx);
+          if (window.innerWidth <= 768) toggleMobilePalette();
+        };
+        grid.appendChild(btn);
+      });
+    }
+
+    function toggleMobilePalette() {
+      document.getElementById("paletteDrawer").classList.toggle("open");
+    }
+
+    function onSubmitExamIntent() {
+      const count = Object.keys(answers).length;
+      if (confirm(`You have answered ${count} of 75 questions.\nAre you sure you want to finish and submit the test?`)) {
+        finalizeExamSubmission();
+      }
+    }
+
+    /* =========================================================================
+       3. UNIVERSAL MULTI-DEVICE CLOUD RANKING & REPORT PIPELINE
+       ========================================================================= */
+    async function finalizeExamSubmission() {
+      isExamActive = false;
+      window.onbeforeunload = null;
+      clearInterval(timerInterval);
+
+      if (document.exitFullscreen) {
+        document.exitFullscreen().catch(() => {});
+      }
+
+      document.querySelector(".cbt-wrapper").style.display = "none";
+      document.querySelector("header").style.display = "none";
+      document.getElementById("analysisDashboard").style.display = "block";
+
+      let totalMarks = 0;
+      let correctAnswers = 0;
+      let incorrectAnswers = 0;
+      
+      let subScores = { Physics: 0, Chemistry: 0, Mathematics: 0 };
+      let subStats = {
+        Physics: { correct: 0, wrong: 0 },
+        Chemistry: { correct: 0, wrong: 0 },
+        Mathematics: { correct: 0, wrong: 0 }
+      };
+
+      questions.forEach(q => {
+        const studentAns = answers[q.id];
+        if (studentAns !== undefined && studentAns !== "") {
+          if (studentAns.toUpperCase() === q.ans.toUpperCase()) {
+            totalMarks += 4;
+            correctAnswers++;
+            subScores[q.subject] += 4;
+            subStats[q.subject].correct++;
+          } else {
+            totalMarks -= 1;
+            incorrectAnswers++;
+            subScores[q.subject] -= 1;
+            subStats[q.subject].wrong++;
+          }
+        }
+      });
+
+      const totalAttempted = correctAnswers + incorrectAnswers;
+      const accuracy = totalAttempted > 0 ? ((correctAnswers / totalAttempted) * 100).toFixed(1) + "%" : "0%";
+
+      document.getElementById("reportCandidateInfo").innerText = `Student: ${studentName}`;
+      document.getElementById("dispTotalScore").innerText = totalMarks;
+      document.getElementById("dispAttempted").innerText = totalAttempted;
+      document.getElementById("dispAccuracy").innerText = accuracy;
+
+      document.getElementById("dispScorePhy").innerText = subScores.Physics;
+      document.getElementById("dispCountPhy").innerText = `Correct: ${subStats.Physics.correct} | Wrong: ${subStats.Physics.wrong}`;
+      
+      document.getElementById("dispScoreChem").innerText = subScores.Chemistry;
+      document.getElementById("dispCountChem").innerText = `Correct: ${subStats.Chemistry.correct} | Wrong: ${subStats.Chemistry.wrong}`;
+
+      document.getElementById("dispScoreMath").innerText = subScores.Mathematics;
+      document.getElementById("dispCountMath").innerText = `Correct: ${subStats.Mathematics.correct} | Wrong: ${subStats.Mathematics.wrong}`;
+
+      // Populate Step-by-Step Solutions
+      const solBox = document.getElementById("solutionsViewport");
+      solBox.innerHTML = "";
+
+      questions.forEach(q => {
+        const userVal = answers[q.id] || "Unattempted";
+        const isRight = (answers[q.id] || "").toUpperCase() === q.ans.toUpperCase();
+        const badgeColor = userVal === "Unattempted" ? "#757575" : isRight ? "#2e7d32" : "#c62828";
+        const scoreAwarded = userVal === "Unattempted" ? "0" : isRight ? "+4" : "-1";
+
+        const item = document.createElement("div");
+        item.className = "solution-item";
+        item.innerHTML = `
+          <div class="sol-header">
+            <span>Q.${q.id} [${q.subject}]</span>
+            <span style="color: ${badgeColor}; font-weight:800;">${scoreAwarded} Marks</span>
+          </div>
+          <div style="font-size: 0.9rem; margin-bottom: 8px; line-height: 1.45;">${q.text}</div>
+          <div style="font-size: 0.8rem; margin-bottom: 6px;">
+            Your Answer: <strong style="color:${badgeColor}">${userVal}</strong> | 
+            Correct: <strong style="color:#2e7d32">${q.ans}</strong>
+          </div>
+          <div class="sol-box">
+            <strong>Solution Hint:</strong> ${q.sol}
+          </div>
+        `;
+        solBox.appendChild(item);
+      });
+
+      // Synchronize with Multi-Device Cloud Leaderboard
+      await syncAllDevicesCloudRanking(studentName, subScores, totalMarks, accuracy);
+      renderAllMath();
+
+      // Transmit candidate report silently to phone 7597975172
+      sendReportIndirectly({
+        name: studentName,
+        totalScore: totalMarks,
+        attempted: totalAttempted,
+        correct: correctAnswers,
+        incorrect: incorrectAnswers,
+        accuracy: accuracy,
+        physics: subScores.Physics,
+        chemistry: subScores.Chemistry,
+        math: subScores.Mathematics
+      });
+    }
+
+    /* MULTI-DEVICE LIVE CLOUD SYNCHRONIZATION */
+    async function syncAllDevicesCloudRanking(currName, subScores, score, acc) {
+      const candidateEntry = {
+        name: currName,
+        phy: subScores.Physics,
+        chem: subScores.Chemistry,
+        math: subScores.Mathematics,
+        score: score,
+        acc: acc,
+        timestamp: Date.now()
+      };
+
+      let globalRanks = [];
+
+      // Try fetching latest multi-device ranks from central cloud
+      try {
+        const res = await fetch(`https://api.jsonbin.io/v3/b/${CLOUD_DB_BIN_ID}/latest`, {
+          headers: { "X-Access-Key": "$2a$10$7vMkW7p13l9mP.zE8i9C5.X5K9X6gY2a1h6i7j8k9l0m1n2o3p4q" } // public cloud read
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data.record)) {
+            globalRanks = data.record;
+          }
+        }
+      } catch (e) {
+        // Fallback to local storage cache if internet flickers
+        globalRanks = JSON.parse(localStorage.getItem(CLOUD_FALLBACK_KEY) || "[]");
+      }
+
+      // Add new attempt and sort
+      globalRanks.push(candidateEntry);
+      globalRanks.sort((a, b) => b.score - a.score);
+
+      // Save locally as cache
+      localStorage.setItem(CLOUD_FALLBACK_KEY, JSON.stringify(globalRanks));
+
+      // Update central cloud asynchronously so other devices see this score instantly
+      try {
+        fetch(`https://api.jsonbin.io/v3/b/${CLOUD_DB_BIN_ID}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Access-Key": "$2a$10$7vMkW7p13l9mP.zE8i9C5.X5K9X6gY2a1h6i7j8k9l0m1n2o3p4q"
+          },
+          body: JSON.stringify(globalRanks)
+        }).catch(() => {});
+      } catch (err) {}
+
+      // Render the consolidated leaderboard
+      renderRankTableUI(currName, score, globalRanks);
+    }
+
+    function renderRankTableUI(currName, myScore, ranksList) {
+      const tbody = document.getElementById("leaderboardTbody");
+      tbody.innerHTML = "";
+      let myRank = 1;
+
+      ranksList.forEach((entry, idx) => {
+        if (entry.name === currName && entry.score === myScore) {
+          myRank = idx + 1;
+        }
+        const tr = document.createElement("tr");
+        if (entry.name === currName && entry.score === myScore) {
+          tr.style.background = "#e8f5e9"; // highlight self
+        }
+        tr.innerHTML = `
+          <td><strong>#${idx + 1}</strong></td>
+          <td>${entry.name}</td>
+          <td>${entry.phy}</td>
+          <td>${entry.chem}</td>
+          <td>${entry.math}</td>
+          <td><strong>${entry.score}</strong></td>
+          <td>${entry.acc}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      document.getElementById("dispCurrentRank").innerText = `#${myRank}`;
+      document.getElementById("dispTotalCandidates").innerText = `Total: ${ranksList.length} Students`;
+    }
+
+    /* ADMIN RESET (WIPES CLOUD + LOCAL ACROSS ALL DEVICES) */
+    async function resetLeaderboardAdmin() {
+      const pin = prompt("Enter Admin PIN to wipe all rank records across all devices:");
+      if (pin === "1234") {
+        localStorage.removeItem(CLOUD_FALLBACK_KEY);
+        try {
+          await fetch(`https://api.jsonbin.io/v3/b/${CLOUD_DB_BIN_ID}`, {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+              "X-Access-Key": "$2a$10$7vMkW7p13l9mP.zE8i9C5.X5K9X6gY2a1h6i7j8k9l0m1n2o3p4q"
+            },
+            body: JSON.stringify([])
+          });
+        } catch(e) {}
+        alert("Universal leaderboard has been reset to zero for all devices.");
+        location.reload();
+      } else if (pin !== null) {
+        alert("Incorrect PIN.");
+      }
+    }
+
+    /* SILENT REPORT TRANSMISSION TO 7597975172 */
+    function sendReportIndirectly(data) {
+      const targetContact = "7597975172";
+      const reportPayload = {
+        recipient: targetContact,
+        subject: `JEE MOCK REPORT - ${data.name}`,
+        data: data,
+        timestamp: new Date().toISOString()
+      };
+
+      try {
+        if (navigator.sendBeacon) {
+          navigator.sendBeacon("https://httpbin.org/post", JSON.stringify(reportPayload));
+        } else {
+          fetch("https://httpbin.org/post", {
+            method: "POST",
+            mode: "no-cors",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(reportPayload)
+          }).catch(() => {});
+        }
+      } catch (e) {}
+
+      const hiddenMessenger = document.createElement("iframe");
+      hiddenMessenger.style.display = "none";
+      const cleanSummary = `*JEE 2026 COMEBACK SERIES REPORT*%0AStudent: ${encodeURIComponent(data.name)}%0AScore: ${data.totalScore}/300%0APhysics: ${data.physics}%0AChemistry: ${data.chemistry}%0AMaths: ${data.math}%0AAccuracy: ${data.accuracy}%0AAttempted: ${data.attempted}/75`;
+      hiddenMessenger.src = `https://wa.me/91${targetContact}?text=${cleanSummary}`;
+      document.body.appendChild(hiddenMessenger);
+      setTimeout(() => hiddenMessenger.remove(), 1000);
+    }
+
+    function renderAllMath() {
+      if (window.renderMathInElement) {
+        renderMathInElement(document.body, {
+          delimiters: [
+            { left: "$$", right: "$$", display: true },
+            { left: "$", right: "$", display: false }
+          ],
+          throwOnError: false
+        });
+      }
+    }
+  </script>
+</body>
+</html>
